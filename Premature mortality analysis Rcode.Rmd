@@ -1,0 +1,839 @@
+---
+title: "Final project"
+author: "Huyun Li - 1005964618"
+date: "15/04/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+#install.packages("car")
+library(tidyverse)
+library(car)
+```
+
+
+# Introduction
+## Proposed Research Question
+
+My proposed research question is whether cervical cancer, breast cancer, diabetes, dinesafe scores, nutrition for youth and teen pregnancy have a linear relationship with premature mortality. 
+
+In the past 10 decades, life expectancy has been increased globally, especially for the older age group. However, the death rates distributed across ages in recent years. There has been a large increasing in mortality among young and middle-age non-Hispanic white and American Indian/Alaska Natives in high-income countries since 2018 (Ana, et.al., 2018). In the past decades, premature mortality happened mostly in low-income areas due to wars, natural diseases and poverty. Therefore, it would be quite interesting to see why the high premature mortality has moved to high-income countries in recent years. This is also terrible to see deaths of large amount of younger age groups, so finding ways to intervene is very important.  
+
+
+## Background Information and Relevance
+
+This is where I will summarize background research. My search of the UofT library yielded 498,331 articles on this topic. One of these articles mentioned that diets, obesity are top risky factors for premature mortality (Holly, 2015). Poor diets contains low fruit, vegetables and high sodium and fat, which causes low nutrition but high calories. There are also articles proven that women with teenage pregnancy are more likely to die prematurely due to suicide, alcohol-related causes and diseases (Eerika, et.al., 2017). Cancers like Cervical Cancer and breast can also lead to premature mortality (Maria, 2020). These are similar to what I want to work on, except that I am not going to include one other variable dinesafe Inspection. DineSafe Inspection is Toronto Public Health's food safety program for inspecting the safety of food. Besides factors like nutrition, obesity, teen pregnancy and cancers, I would like to figure out if DineSafe is also a factor to premature mortality. Knowing this result tells me that I may not estimate the same relationship as them and that my results might be biased by omitting this information.
+
+
+# Data Source and Description
+
+The data I will use in this project comes from https://open.toronto.ca/dataset/wellbeing-toronto-health/. It includes 140 observations on 13 variables. The variables used for analysis are
+
+- Premature Mortality: the variable of interest, which measures the deaths for younger age groups.
+- Cervical Cancer Screenings: the predictor of interest, which means the percentage of getting cervical cancer. 
+- Breast Cancer Screenings: another predictor that has been shown to be related to response, defined as the percentage of       getting breast cancer. 
+- Colorectal Cancer Screenings: the percentage of getting Colorectal Cancer. 
+- Community Food Program: the food program in the community.
+- Diabetes Prevalence: the predictor of interest that measures the percentage of getting diabetes in each neignborhood.
+- DineSafe Inspections: the predictor of interest which measures the score of food safety of the community food program for each neignborhood.
+- Female Fertility: the percentage of fertility of female in each neignborhood. 
+- Health Provider: the numbers of health providers in each neignborhood.
+- Student Nutrition: the predictor of interest which shows how much nutrition students get in each neignborhood. 
+- Teen Pregnancy: the predictor of interest which presents the percentage of pregnancy for teenages. 
+
+In line with the background research conducted, these variables all seem relevant to the response and so I will include them to be consistent with previous results.
+
+```{r include=FALSE}
+wellbeing_health <- read_csv("wellbeing-toronto-health.csv")
+```
+
+
+## Divide the data into trainning and testing datasets
+```{r}
+set.seed(18)
+
+train <- wellbeing_health[sample(1:nrow(wellbeing_health), 80, replace=F), ]
+test <- wellbeing_health[which(!(wellbeing_health$Neighbourhood %in% train$Neighbourhood)),]
+```
+
+
+
+## Exploratory Data Analysis
+
+```{r echo=FALSE}
+summary(train$`Premature Mortality`)
+IQR(train$`Premature Mortality`)
+sd(train$`Premature Mortality`)
+
+summary(train$`Cervical Cancer Screenings`)
+IQR(train$`Cervical Cancer Screenings`)
+sd(train$`Cervical Cancer Screenings`)
+
+summary(train$`Breast Cancer Screenings`)
+IQR(train$`Breast Cancer Screenings`)
+sd(train$`Breast Cancer Screenings`)
+
+summary(train$`Colorectal Cancer Screenings`)
+IQR(train$`Colorectal Cancer Screenings`)
+sd(train$`Colorectal Cancer Screenings`)
+
+summary(train$`Community Food Programs`)
+IQR(train$`Community Food Programs`)
+sd(train$`Community Food Programs`)
+
+summary(train$`Diabetes Prevalence`)
+IQR(train$`Diabetes Prevalence`)
+sd(train$`Diabetes Prevalence`)
+
+summary(train$`DineSafe Inspections`)
+IQR(train$`DineSafe Inspections`)
+sd(train$`DineSafe Inspections`)
+
+summary(train$`Female Fertility`)
+IQR(train$`Female Fertility`)
+sd(train$`Female Fertility`)
+
+summary(train$`Health Providers`)
+IQR(train$`Health Providers`)
+sd(train$`Health Providers`)
+
+summary(train$`Student Nutrition`)
+IQR(train$`Student Nutrition`)
+sd(train$`Student Nutrition`)
+
+summary(train$`Teen Pregnancy`)
+IQR(train$`Teen Pregnancy`)
+sd(train$`Teen Pregnancy`)
+
+```
+
+Table 1: Numerical summaries in training dataset
+
+Variable                  |   Mean  |   median  |     IQR   | Standard Deviation
+--------------------------|---------|-----------|-----------|---------------------
+premature mortality       |  248.7  |    234.7  |  64.26568 |     76.66991
+cervical cancer screenings|  64.97  |    64.97  |    5.375  |     4.319608
+breast cancer screenings  |  59.42  |    59.45  |    6.25   |     4.798842
+colorectal Cancer Screenings|  38.57  |    38.35  |    4.25   |     3.922307
+Community Food Programs   |  3.288  |      2    |     3     |     3.597445
+diabetes prevalence       |  10.671 |    10.50  |   3.475   |     2.51392
+dinesafe Inspection       |  10.96  |    4.00   |   7.25    |     20.71167
+Female Fertility          |  45.00  |    45.45  | 15.82824  |     11.4757
+Health Providers          |  33.80  |    23.50  |   40.75   |     33.39992
+student nutrition         | 915.4   |   512.5   | 1295.25   |     1049.596 
+teen pregnancy            |  29.52  |   31.10   |  22.09706 |     15.06766
+
+
+```{r echo=FALSE, fig.cap="histogram and boxplots on training dataset", fig.height=7, fig.width=10}
+#install.packages("cowplot")
+library(cowplot)
+
+mortality_plot <- ggplot(data = train, aes(x=`Premature Mortality`)) +
+  geom_histogram(fill = "steelblue", color="grey", bins=12) + 
+  labs(x="Mortality", title = "histogram of Premature Mortality", caption = "Plot 1") +
+  theme(plot.title = element_text(size=10))
+
+cervical_plot <- ggplot(data = train, aes(y=`Cervical Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="cervical", title = "Boxplot of Cervical Cancer", caption = "Plot 2") +
+  theme(plot.title = element_text(size=10))
+
+breast_plot <- ggplot(data = train, aes(y=`Breast Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="breast cancer", title = "Boxplot of Breast Cancer", caption = "Plot 3") +
+  theme(plot.title = element_text(size=10))
+
+colorectal_plot <- ggplot(data = train, aes(y=`Colorectal Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="colorectal cancer", title = "Boxplot of Colorectal Cancer", caption = "Plot 4") +
+  theme(plot.title = element_text(size=10))
+
+program_plot <- ggplot(data = train, aes(y=`Community Food Programs`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="food program", title = "Boxplot of Food program", caption = "Plot 5") +
+  theme(plot.title = element_text(size=10))
+
+diabetes_plot <- ggplot(data = train, aes(y=`Diabetes Prevalence`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="diabete", title = "Boxplot of Diabetes Prevalence", caption = "Plot 6") +
+  theme(plot.title = element_text(size=10))
+
+dinesafe_plot <- ggplot(data = train, aes(y=`DineSafe Inspections`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="dinesafe", title = "Boxplot of DineSafe", caption = "Plot 7") +
+  theme(plot.title = element_text(size=10))
+
+fertility_plot <- ggplot(data = train, aes(y=`Female Fertility`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="fertility", title = "Boxplot of female fertility", caption = "Plot 8") +
+  theme(plot.title = element_text(size=10))
+
+provider_plot <- ggplot(data = train, aes(y=`Health Providers`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="health providers", title = "Boxplot of Health Providers", caption = "Plot 9") +
+  theme(plot.title = element_text(size=10))
+
+nutrition_plot <- ggplot(data = train, aes(y=`Student Nutrition`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="Student Nutrition", title = "Boxplot of Student Nutrition", caption = "Plot 10") +
+  theme(plot.title = element_text(size=10))
+
+pregnancy_plot <- ggplot(data = train, aes(y=`Teen Pregnancy`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="teen pregnancy", title = "Boxplot of Teen Pregnancy", caption = "Plot 11") +
+  theme(plot.title = element_text(size=10))
+
+plot_grid(mortality_plot, cervical_plot, breast_plot, colorectal_plot, program_plot, diabetes_plot, dinesafe_plot, fertility_plot, provider_plot, nutrition_plot, pregnancy_plot)
+```
+
+```{r echo=FALSE, warning=F, message=F, fig.cap="scatterplots on training dataset", fig.height=7, fig.width=10}
+
+scatter1 <- ggplot(data = train, aes(x=`Cervical Cancer Screenings`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Cervical cancer", y = "Premature mortality", title = "Scatterplot for cervical vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter2 <- ggplot(data = train, aes(x=`Breast Cancer Screenings`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Breast Cancer", y = "Premature mortality", title = "Scatterplot for breast cancer vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter3 <- ggplot(data = train, aes(x=`Colorectal Cancer Screenings`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Colorectal cancer", y = "Premature mortality", title = "Scatterplot for Colorectal vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter4 <- ggplot(data = train, aes(x=`Community Food Programs`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Food program", y = "Premature mortality", title = "Scatterplot for food program vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter5 <- ggplot(data = train, aes(x=`Diabetes Prevalence`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Diabetes Prevalence", y = "Premature mortality", title = "Scatterplot for diabetes vs mortality ") +
+  theme(plot.title = element_text(size=8))
+
+scatter6 <- ggplot(data = train, aes(x=`DineSafe Inspections`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="DineSafe Inspection", y = "Premature mortality", title = "Scatterplot for dinesafe vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter7 <- ggplot(data = train, aes(x=`Female Fertility`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Female Fertility", y = "Premature mortality", title = "Scatterplot for female fertility vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter8 <- ggplot(data = train, aes(x=`Health Providers`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Health Providers", y = "Premature mortality", title = "Scatterplot for health providers vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter9 <- ggplot(data = train, aes(x=`Student Nutrition`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Student Nutrition", y = "Premature mortality", title = "Scatterplot for nutrition vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+scatter10 <- ggplot(data = train, aes(x=`Teen Pregnancy`, y=`Premature Mortality`)) +
+  geom_point() +
+  geom_smooth(method = lm, se=FALSE) +
+  labs(x="Teen Pregnancy", y = "Premature mortality", title = "Scatterplot for teens pregnancy vs mortality") +
+  theme(plot.title = element_text(size=8))
+
+plot_grid(scatter1, scatter2, scatter3, scatter4, scatter5, scatter6, scatter7, scatter8, scatter9, scatter10)
+```
+
+
+# Method
+
+# Result
+## Fit a full model
+```{r}
+model_full <- lm(train$`Premature Mortality` ~ . -Neighbourhood - `Neighbourhood Id`, data = train)
+
+```
+
+
+
+```{r}
+# check 2 conditions and model assumptions
+
+# condition 1 
+y_hat <- fitted(model_full)
+yi <- train$`Premature Mortality`
+plot(yi, y_hat)
+# condition 2
+pairs(~`Cervical Cancer Screenings`+`Breast Cancer Screenings`+`Colorectal Cancer Screenings`+`Community Food Programs`+`Diabetes Prevalence`+`DineSafe Inspections`+`Female Fertility`+`Health Providers`+`Student Nutrition`+`Teen Pregnancy`, data = train)
+
+#residual vs fitted
+res <- rstandard(model_full)
+y_hat <- fitted(model_full)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(train$`Cervical Cancer Screenings`, res)
+plot(train$`Breast Cancer Screenings`, res)
+plot(train$`Colorectal Cancer Screenings`, res)
+plot(train$`Community Food Programs`, res)
+plot(train$`Diabetes Prevalence`,res)
+plot(train$`DineSafe Inspections`, res)
+plot(train$`Female Fertility`,res)
+plot(train$`Health Providers`,res)
+plot(train$`Student Nutrition`,res)
+plot(train$`Teen Pregnancy`,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+
+```
+The original full model satisfies both condition 1 and condition 2. After plotting the residual plots, I find that assumptions of linearity, constant variance and uncorrelated errors are held, while normality doesn't hold. Therefore, I'm going to apply Box-Cox transformation to correct the model violations. 
+
+```{r,warning=F, message=F}
+train <- train %>%
+  mutate(`Community Food Programs` = `Community Food Programs`+0.0000001,
+         `DineSafe Inspections` = `DineSafe Inspections`+0.0000001,
+         `Student Nutrition` = `Student Nutrition`+0.0000001,
+         `Teen Pregnancy` = `Teen Pregnancy`+0.0000001)
+p <- powerTransform(cbind(train$`Premature Mortality`,
+                          train$`Cervical Cancer Screenings`,
+                          train$`Breast Cancer Screenings`,
+                          train$`Colorectal Cancer Screenings`,
+                          train$`Community Food Programs`,
+                          train$`Diabetes Prevalence`,
+                          train$`DineSafe Inspections`,
+                          train$`Female Fertility`,
+                          train$`Health Providers`,
+                          train$`Student Nutrition`,
+                          train$`Teen Pregnancy`))
+
+summary(p)
+```
+```{r}
+#transformed model
+train_trans <- train %>%
+  mutate(mortality_trans = `Premature Mortality`^(-1),
+         program_trans = log(`Community Food Programs`),
+         dinesafe_trans = `DineSafe Inspections`^(0.1),
+         provider_trans = `Health Providers`^(0.5),
+         nutrition_trans = log(`Student Nutrition`),
+         pregnancy_trans = `Teen Pregnancy`^(0.5))
+
+#fit a transformed model
+model_full_trans <- lm(mortality_trans ~ . -Neighbourhood - `Neighbourhood Id`-`Premature Mortality` -`Community Food Programs` -`DineSafe Inspections` -`Health Providers` -`Student Nutrition` -`Teen Pregnancy`, data = train_trans)
+```
+
+
+
+```{r}
+# check 2 conditions and model assumptions
+
+# condition 1 
+y_hat <- fitted(model_full_trans)
+yi <- train_trans$mortality_trans
+plot(yi, y_hat)
+# condition 2
+pairs(~`Cervical Cancer Screenings`+`Breast Cancer Screenings`+`Colorectal Cancer Screenings`+program_trans+`Diabetes Prevalence`+dinesafe_trans+`Female Fertility`+provider_trans+nutrition_trans+pregnancy_trans, data = train_trans)
+
+#residual vs fitted
+res <- rstandard(model_full_trans)
+y_hat <- fitted(model_full_trans)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(train_trans$`Cervical Cancer Screenings`, res)
+plot(train_trans$`Breast Cancer Screenings`, res)
+plot(train_trans$`Colorectal Cancer Screenings`, res)
+plot(train_trans$program_trans, res)
+plot(train_trans$`Diabetes Prevalence`,res)
+plot(train_trans$dinesafe_trans, res)
+plot(train_trans$`Female Fertility`,res)
+plot(train_trans$provider_trans,res)
+plot(train_trans$nutrition_trans,res)
+plot(train_trans$pregnancy_trans,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+
+```
+
+After model transformation, the linearity, constant variance and uncorrelated errors hold, but the normality is violated still. However, the QQ plot matches the 45 degree line better than model without transformation, even though it is still a bit right skewed. Therefore, we will use the transformed model to do later analysis. 
+
+```{r}
+#check the multicollinearity in the transformed full model
+vif(model_full_trans)
+```
+```{r}
+#recheck multicollinearity after removing Breast Cancer Screenings
+model_full_trans2 <- lm(mortality_trans ~ . -Neighbourhood - `Neighbourhood Id`-`Premature Mortality` -`Community Food Programs` -`DineSafe Inspections` -`Health Providers` -`Student Nutrition` -`Teen Pregnancy` -`Breast Cancer Screenings`, data = train_trans)
+
+
+vif(model_full_trans2)
+```
+
+## automated selection vs manual selection
+```{r}
+#backward selection
+model_auto <- step(model_full_trans2, direction = "back")
+
+summary(model_auto)
+```
+
+```{r}
+#manual selection based on common sense/EDA/p value
+summary(model_full_trans2)
+
+model_manual <- lm(mortality_trans ~ `Colorectal Cancer Screenings` + `Diabetes Prevalence` + program_trans + pregnancy_trans, data = train_trans)
+
+summary(model_manual)
+```
+
+p values of variables Colorectal Cancer Screenings, Food Program and Teens Pregnancy are large, and scatterplots in EDA shows that there are obvious linear relationship between Premature mortality and variables Breast Cancer Screenings and Diabetes Prevalence. Therefore, I include these five variables in my manually selected model. 
+
+
+## Compare the models
+
+```{r}
+#anova
+anova(model_auto, model_full_trans2)
+
+anova(model_manual, model_full_trans2)
+
+#both auto model and manual model are better than full model
+```
+
+```{r}
+#adj R^2
+summary(model_full_trans2)$adj.r.squared
+
+summary(model_auto)$adj.r.squared
+
+summary(model_manual)$adj.r.squared
+```
+```{r}
+#AIC
+AIC(model_full_trans2)
+AIC(model_auto)
+AIC(model_manual)
+```
+
+```{r}
+#BIC
+BIC(model_full_trans2)
+BIC(model_auto)
+BIC(model_manual)
+```
+
+
+```{r}
+#problematic observations
+
+#model auto
+#leverage point
+h<-hatvalues(model_auto)
+threshold <- 2*(length(model_auto$coefficients)/nrow(train_trans))
+which(h>threshold)
+
+#outlier
+
+std_res <-rstandard(model_auto)
+which(abs(std_res)>2)
+
+#cooks's distance
+D <- cooks.distance(model_auto)
+cutoff_D <- qf(0.5, length(model_auto$coefficients),
+               nrow(train_trans)-length(model_auto$coefficients))
+which(D>cutoff_D)
+
+#identify influential points by DFFITS
+DFFITScut <- 2*sqrt((length(model_auto$coefficients))/nrow(train_trans))
+fits <- dffits(model_auto)
+which(abs(fits) > DFFITScut)
+```
+```{r}
+#model manual
+
+#leverage point
+h<-hatvalues(model_manual)
+threshold <- 2*(length(model_manual$coefficients)/nrow(train_trans))
+which(h>threshold)
+
+#outlier
+
+std_res <-rstandard(model_manual)
+which(abs(std_res)>2)
+
+#cooks's distance
+D <- cooks.distance(model_manual)
+cutoff_D <- qf(0.5, length(model_manual$coefficients),
+               nrow(train_trans)-length(model_manual$coefficients))
+which(D>cutoff_D)
+
+#identify influential points by DFFITS
+DFFITScut <- 2*sqrt((length(model_manual$coefficients))/nrow(train_trans))
+fits <- dffits(model_manual)
+which(abs(fits) > DFFITScut)
+```
+
+```{r}
+#compare residual plots
+
+#model auto
+
+#condition 1
+y_hat <- fitted(model_auto)
+yi <- train_trans$mortality_trans
+plot(yi, y_hat)
+# condition 2
+pairs(~`Colorectal Cancer Screenings` + program_trans + 
+    provider_trans + pregnancy_trans, data = train_trans)
+
+#residual vs fitted
+res <- rstandard(model_auto)
+y_hat <- fitted(model_auto)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(train_trans$`Colorectal Cancer Screenings`, res)
+plot(train_trans$program_trans, res)
+plot(train_trans$provider_trans,res)
+plot(train_trans$pregnancy_trans,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+
+
+```
+
+```{r}
+#model manual
+
+# condition 1 
+y_hat <- fitted(model_manual)
+yi <- train_trans$mortality_trans
+plot(yi, y_hat)
+# condition 2
+pairs(~`Colorectal Cancer Screenings` + 
+    `Diabetes Prevalence` + program_trans + pregnancy_trans, data = train_trans)
+
+#residual vs fitted
+res <- rstandard(model_manual)
+y_hat <- fitted(model_manual)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(train_trans$`Colorectal Cancer Screenings`, res)
+plot(train_trans$program_trans, res)
+plot(train_trans$`Diabetes Prevalence`,res)
+plot(train_trans$pregnancy_trans,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+```
+# Model validation
+
+
+```{r,warning=F, message=F}
+## Part 2: Apply the same transformation on testing data
+
+test <- test %>%
+  mutate(`Community Food Programs` = `Community Food Programs`+0.0000001,
+         `DineSafe Inspections` = `DineSafe Inspections`+0.0000001,
+         `Student Nutrition` = `Student Nutrition`+0.0000001,
+         `Teen Pregnancy` = `Teen Pregnancy`+0.0000001)
+
+test_trans <- test %>%
+  mutate(mortality_trans = `Premature Mortality`^(-1),
+         program_trans = log(`Community Food Programs`),
+         dinesafe_trans = `DineSafe Inspections`^(0.1),
+         provider_trans = `Health Providers`^(0.5),
+         nutrition_trans = log(`Student Nutrition`),
+         pregnancy_trans = `Teen Pregnancy`^(0.5))
+
+model_auto_test <- lm(formula = mortality_trans ~ `Colorectal Cancer Screenings` + 
+    program_trans + provider_trans + pregnancy_trans, data = test_trans)
+
+model_manual_test <- lm(mortality_trans ~ `Colorectal Cancer Screenings` + `Diabetes Prevalence` + program_trans + pregnancy_trans, data = test_trans)
+
+
+```
+
+
+```{r}
+#compare adj R^2 for testing model
+summary(model_auto_test)$adj.r.squared
+ 
+summary(model_manual_test)$adj.r.squared
+```
+
+
+```{r}
+#compare p values and coefficients for testing model
+
+summary(model_auto_test)
+
+
+summary(model_manual_test)
+```
+```{r}
+#AIC
+AIC(model_auto_test)
+AIC(model_manual_test)
+```
+
+```{r}
+#BIC
+BIC(model_auto_test)
+BIC(model_manual_test)
+```
+
+```{r}
+#problematic observations
+
+#model auto test
+#leverage point
+h<-hatvalues(model_auto_test)
+threshold <- 2*(length(model_auto_test$coefficients)/nrow(test_trans))
+which(h>threshold)
+
+#outlier
+
+std_res <-rstandard(model_auto_test)
+which(abs(std_res)>2)
+
+#cooks's distance
+D <- cooks.distance(model_auto_test)
+cutoff_D <- qf(0.5, length(model_auto_test$coefficients),
+               nrow(test_trans)-length(model_auto_test$coefficients))
+which(D>cutoff_D)
+
+#identify influential points by DFFITS
+DFFITScut <- 2*sqrt((length(model_auto_test$coefficients))/nrow(test_trans))
+fits <- dffits(model_auto_test)
+which(abs(fits) > DFFITScut)
+```
+
+```{r}
+#model manual
+
+#leverage point
+h<-hatvalues(model_manual_test)
+threshold <- 2*(length(model_manual_test$coefficients)/nrow(test_trans))
+which(h>threshold)
+
+#outlier
+
+std_res <-rstandard(model_manual_test)
+which(abs(std_res)>2)
+
+#cooks's distance
+D <- cooks.distance(model_manual_test)
+cutoff_D <- qf(0.5, length(model_manual_test$coefficients),
+               nrow(test_trans)-length(model_manual_test$coefficients))
+which(D>cutoff_D)
+
+#identify influential points by DFFITS
+DFFITScut <- 2*sqrt((length(model_manual_test$coefficients))/nrow(test_trans))
+fits <- dffits(model_manual_test)
+which(abs(fits) > DFFITScut)
+```
+
+
+```{r}
+#compare model violations for testing model
+
+#model auto test
+
+#condition 1
+y_hat <- fitted(model_auto_test)
+yi <- test_trans$mortality_trans
+plot(yi, y_hat)
+# condition 2
+pairs(~`Colorectal Cancer Screenings` + program_trans + 
+    provider_trans + pregnancy_trans, data = test_trans)
+
+#residual vs fitted
+res <- rstandard(model_auto_test)
+y_hat <- fitted(model_auto_test)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(test_trans$`Colorectal Cancer Screenings`, res)
+plot(test_trans$program_trans, res)
+plot(test_trans$provider_trans,res)
+plot(test_trans$pregnancy_trans,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+
+
+```
+
+```{r}
+#model manual test
+
+# condition 1 
+y_hat <- fitted(model_manual_test)
+yi <- test_trans$mortality_trans
+plot(yi, y_hat)
+# condition 2
+pairs(~`Colorectal Cancer Screenings` + `Breast Cancer Screenings` + 
+    `Diabetes Prevalence` + program_trans + pregnancy_trans, data = test_trans)
+
+#residual vs fitted
+res <- rstandard(model_manual_test)
+y_hat <- fitted(model_manual_test)
+
+plot(y_hat, res)
+#residual vs predictors
+par(mfrow=c(3,4))
+plot(test_trans$`Colorectal Cancer Screenings`, res)
+plot(test_trans$program_trans, res)
+plot(test_trans$`Diabetes Prevalence`,res)
+plot(test_trans$pregnancy_trans,res)
+
+# residual QQ plot
+
+qqnorm(res)
+qqline(res)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+Table 2: Characteristics of auto model and manual model on trainning and testing dataset
+
+Characteristic | Model auto (Train) | Model auto (Test) | Model manual (Train) | Model manual (Test)
+---------------|----------------|---------------|-----------------|---------------
+AIC | -902.7868 | -681.2028 | -899.3577 | -682.1407
+BIC | -888.4947 | -668.6367 | -885.0656 | -669.5746
+adj R^2 | 0.5247026 | 0.6129427 | 0.5038864 | 0.6190008
+\# Cook's D | 0 | 0| 0 | 0
+\# DIFFITS | 6| 5 | 9 | 5
+\# leverage points | 8 | 4 | 9 | 2
+\# outliers | 3 | 3 | 5 | 1
+violations | normality | normality | normality | normality
+intercept | $1.725*10^{-5}$ | $1.766*10^{-3}$ | $9.253*10^{-5}$ | $2.244*10^{-3}$
+Colorectal Cancer coefficient | $1.283*10^{-4}$ (\*) | $1.207*10^{-4}$ (\*)| $1.376*10^{-4}$ (\*) | $1.114*10^{-4}$ (\*)
+Diabetes Prevalence | - | - | $-1.102*10^{-5}$ | $9.932*10^{-5}$
+Food Program | $-5.09*10^{-5}$ (\*) | $-1.186*10^{-5}$ | $-4.475*10^{-5}$ (\*) | $-3.427*10^{-6}$ 
+Teens Pregnancy | $-2.068*10^{-4}$ (\*) | $-4.091*10^{-4}$ (\*) | $-2.005*10^{-4}$ (\*) | $-5.723*10^{-4}$ (\*)
+Health Providers | $6.508*10^{-5}$ | $5.581*10^{-5}$ | - | - 
+
+
+
+
+
+
+
+
+# Final Model
+```{r}
+final_model <- lm(formula = mortality_trans ~ `Colorectal Cancer Screenings` + 
+    program_trans + provider_trans + pregnancy_trans, data = train_trans)
+
+summary(final_model)
+```
+
+$$ \hat{Premature Mortality^{-1}} = 1.725*10^{-5} + 1.283*10^{-4}*Colorectal Cancer Screening - 5.09*10^{-5}*Food Program $$
+$$ + 6.508*10^{-5}*Health Providers - 2.068*10^{-4}*Teens Pregnancy$$
+
+# Appendix
+
+```{r echo=FALSE, fig.cap="histogram and boxplots on testing dataset", fig.height=7, fig.width=10}
+#Part 1: Compare EDA
+
+library(cowplot)
+
+mortality_plot <- ggplot(data = test, aes(x=`Premature Mortality`)) +
+  geom_histogram(fill = "steelblue", color="grey", bins=12) + 
+  labs(x="Mortality", title = "histogram of Premature Mortality", caption = "Plot 1") +
+  theme(plot.title = element_text(size=10))
+
+cervical_plot <- ggplot(data = test, aes(y=`Cervical Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="cervical", title = "Boxplot of Cervical Cancer", caption = "Plot 2") +
+  theme(plot.title = element_text(size=10))
+
+breast_plot <- ggplot(data = test, aes(y=`Breast Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="breast cancer", title = "Boxplot of Breast Cancer", caption = "Plot 3") +
+  theme(plot.title = element_text(size=10))
+
+colorectal_plot <- ggplot(data = test, aes(y=`Colorectal Cancer Screenings`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="colorectal cancer", title = "Boxplot of Colorectal Cancer", caption = "Plot 4") +
+  theme(plot.title = element_text(size=10))
+
+program_plot <- ggplot(data = test, aes(y=`Community Food Programs`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="food program", title = "Boxplot of Food program", caption = "Plot 5") +
+  theme(plot.title = element_text(size=10))
+
+diabetes_plot <- ggplot(data = test, aes(y=`Diabetes Prevalence`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="diabete", title = "Boxplot of Diabetes Prevalence", caption = "Plot 6") +
+  theme(plot.title = element_text(size=10))
+
+dinesafe_plot <- ggplot(data = test, aes(y=`DineSafe Inspections`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="dinesafe", title = "Boxplot of DineSafe", caption = "Plot 7") +
+  theme(plot.title = element_text(size=10))
+
+fertility_plot <- ggplot(data = test, aes(y=`Female Fertility`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="fertility", title = "Boxplot of female fertility", caption = "Plot 8") +
+  theme(plot.title = element_text(size=10))
+
+provider_plot <- ggplot(data = test, aes(y=`Health Providers`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="health providers", title = "Boxplot of Health Providers", caption = "Plot 9") +
+  theme(plot.title = element_text(size=10))
+
+nutrition_plot <- ggplot(data = test, aes(y=`Student Nutrition`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="Student Nutrition", title = "Boxplot of Student Nutrition", caption = "Plot 10") +
+  theme(plot.title = element_text(size=10))
+
+pregnancy_plot <- ggplot(data = test, aes(y=`Teen Pregnancy`)) +
+  geom_boxplot(fill = "lightpink", color="black") + 
+  labs(x="teen pregnancy", title = "Boxplot of Teen Pregnancy", caption = "Plot 11") +
+  theme(plot.title = element_text(size=10))
+
+plot_grid(mortality_plot, cervical_plot, breast_plot, colorectal_plot, program_plot, diabetes_plot, dinesafe_plot, fertility_plot, provider_plot, nutrition_plot, pregnancy_plot)
+```
